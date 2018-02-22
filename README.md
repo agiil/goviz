@@ -22,7 +22,7 @@ go install github.com/zackslash/goviz
 ## Usage
 
 ```
-goviz -i <your_project_path> -d 2 -p | dot -Tpng -o <output_file_name>.png
+goviz -i <your_project_path> | dot -Tpng -o <output_file_name>.png
 
 Example: goviz -i github.com/hashicorp/serf | dot -Tpng -o diagram.png
 ```

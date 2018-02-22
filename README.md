@@ -2,6 +2,7 @@ goviz
 =====
 
 Goviz is a golang project dependency visualization tool (see example output below)
+
 'zackslash/goviz' is an updated version of the original hirokidaichi project.
 
 ![](https://raw.githubusercontent.com/zackslash/goviz/master/images/own.png)

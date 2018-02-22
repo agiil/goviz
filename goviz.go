@@ -1,109 +1,105 @@
 package main
 
 import (
-    "fmt"
-    "github.com/hirokidaichi/goviz/dotwriter"
-    "github.com/hirokidaichi/goviz/goimport"
-    "github.com/hirokidaichi/goviz/metrics"
-    "github.com/jessevdk/go-flags"
-    "os"
+	"fmt"
+	"os"
+
+	"github.com/zackslash/goviz/dotwriter"
+	"github.com/zackslash/goviz/goimport"
+	"github.com/zackslash/goviz/metrics"
+
+	cli "gopkg.in/alecthomas/kingpin.v2"
 )
 
-type options struct {
-    InputDir   string `short:"i" long:"input" required:"true" description:"intput ploject name"`
-    OutputFile string `short:"o" long:"output" default:"STDOUT" description:"output file"`
-    Depth      int    `short:"d" long:"depth" default:"128" description:"max plot depth of the dependency tree"`
-    Reversed   string `short:"f" long:"focus" description:"focus on the specific module"`
-    SeekPath   string `short:"s" long:"search" default:"" description:"top directory of searching"`
-    PlotLeaf   bool   `short:"l" long:"leaf" default:"false" description:"whether leaf nodes are plotted"`
-    UseMetrics bool   `short:"m" long:"metrics" default:"false" description:"display module metrics"`
-}
+var (
+	inputDir            = cli.Flag("input", "project directory").Required().Short('i').String()
+	outputFile          = cli.Flag("output", "output file").Default("STDOUT").Short('o').String()
+	depth               = cli.Flag("depth", "max plot depth of the dependency tree").Default("2").Short('d').Int()
+	reversed            = cli.Flag("focus", "focus on the specific module").Default("").Short('f').String()
+	seekPath            = cli.Flag("search", "top directory of searching").Default("").Short('s').String()
+	plotLeaf            = cli.Flag("leaf", "if leaf nodes are plotted").Default("false").Short('l').Bool()
+	useMetrics          = cli.Flag("metrics", "display module metrics").Default("false").Short('m').Bool()
+	projectPackagesOnly = cli.Flag("ppackage", "only include packages from immediate project").Default("true").Short('p').Bool()
+)
 
-func getOptions() (*options, error) {
-    options := new(options)
-    _, err := flags.Parse(options)
-    if err != nil {
-        return nil, err
-    }
-    return options, nil
-
-}
 func main() {
-    res := process()
-    os.Exit(res)
-}
-
-func errorf(format string, args ...interface{}) {
-    fmt.Fprintf(os.Stderr, format, args...)
+	cli.Version("1.0")
+	cli.Parse()
+	res := process()
+	os.Exit(res)
 }
 
 func process() int {
-    options, err := getOptions()
-    if err != nil {
-        return 1
-    }
-    factory := goimport.ParseRelation(
-        options.InputDir,
-        options.SeekPath,
-        options.PlotLeaf,
-    )
-    if factory == nil {
-        errorf("inputdir does not exist.\n go get %s", options.InputDir)
-        return 1
-    }
-    root := factory.GetRoot()
-    if !root.HasFiles() {
-        errorf("%s has no .go files\n", root.ImportPath)
-        return 1
-    }
-    if 0 > options.Depth {
-        errorf("-d or --depth should have positive int\n")
-        return 1
-    }
-    output := getOutputWriter(options.OutputFile)
-    if options.UseMetrics {
-        metrics_writer := metrics.New(output)
-        metrics_writer.Plot(pathToNode(factory.GetAll()))
-        return 0
-    }
+	factory := goimport.ParseRelation(
+		*inputDir,
+		*seekPath,
+		*plotLeaf,
+	)
 
-    writer := dotwriter.New(output)
-    writer.MaxDepth = options.Depth
-    if options.Reversed == "" {
-        writer.PlotGraph(root)
-        return 0
-    }
-    writer.Reversed = true
+	if factory == nil {
+		fmt.Errorf("inputdir does not exist.\n go get %s", *inputDir)
+		return 1
+	}
 
-    rroot := factory.Get(options.Reversed)
-    if rroot == nil {
-        errorf("-r %s does not exist.\n ", options.Reversed)
-        return 1
-    }
-    if !rroot.HasFiles() {
-        errorf("-r %s has no go files.\n ", options.Reversed)
-        return 1
-    }
+	root := factory.GetRoot()
+	if !root.HasFiles() {
+		fmt.Errorf("%s has no go files", root.ImportPath)
+		return 1
+	}
 
-    writer.PlotGraph(rroot)
-    return 0
+	if 0 > *depth {
+		fmt.Errorf("-d or --depth should have positive int")
+		return 1
+	}
+
+	output := getOutputWriter(*outputFile)
+	if *useMetrics {
+		metricsWriter := metrics.New(output)
+		metricsWriter.Plot(pathToNode(factory.GetAll()))
+		return 0
+	}
+
+	writer := dotwriter.New(output)
+	writer.MaxDepth = *depth
+	if *reversed == "" {
+		writer.PlotGraph(root, *projectPackagesOnly)
+		return 0
+	}
+
+	writer.Reversed = true
+
+	rroot := factory.Get(*reversed)
+	if rroot == nil {
+		fmt.Errorf("-r %s does not exist", *reversed)
+		return 1
+	}
+
+	if !rroot.HasFiles() {
+		fmt.Errorf("-r %s has no go files", *reversed)
+		return 1
+	}
+
+	writer.PlotGraph(rroot, *projectPackagesOnly)
+	return 0
 }
 
 func pathToNode(pathes []*goimport.ImportPath) []dotwriter.IDotNode {
-    r := make([]dotwriter.IDotNode, len(pathes))
+	r := make([]dotwriter.IDotNode, len(pathes))
 
-    for i, _ := range pathes {
-        r[i] = pathes[i]
-    }
-    return r
+	for i := range pathes {
+		r[i] = pathes[i]
+	}
+
+	return r
 }
 func getOutputWriter(name string) *os.File {
-    if name == "STDOUT" {
-        return os.Stdout
-    }
-    if name == "STDERR" {
-        return os.Stderr
-    }
-    f, _ := os.Create(name)
-    return f
+	if name == "STDOUT" {
+		return os.Stdout
+	}
+	if name == "STDERR" {
+		return os.Stderr
+	}
+	f, _ := os.Create(name)
+
+	return f
 }

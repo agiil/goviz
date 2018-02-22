@@ -2,7 +2,7 @@ goviz
 =====
 
 a visualization tool for golang project dependency
-![](https://raw.githubusercontent.com/hirokidaichi/goviz/master/images/<:$own.image:>)
+![](https://raw.githubusercontent.com/zackslash/goviz/master/images/<:$own.image:>)
 
 
 This tool is for helping source code reading. 
@@ -11,7 +11,7 @@ The dependency of the whole code can be visualized quickly.
 ## Installation
 
 ```
-go get github.com/hirokidaichi/goviz
+go get github.com/zackslash/goviz
 ```
 
 and if not being installed [graphviz](http://www.graphviz.org), install it :
@@ -41,7 +41,7 @@ goviz -i github.com/hashicorp/serf | dot -Tpng -o hoge.png
 ```
 goviz -i <: $sample.repo :> <:$sample.option:>| dot -Tpng -o <:$sample.image:>
 ```
-![](https://raw.githubusercontent.com/hirokidaichi/goviz/master/images/<:$sample.image:>)
+![](https://raw.githubusercontent.com/zackslash/goviz/master/images/<:$sample.image:>)
 
 : }
 
@@ -63,9 +63,6 @@ It becomes easy to distinguish whether it is a module nearer to  application lay
 
 MIT
 
-## Author
+## Original goviz Author
 
 hirokidaichi [at] gmail.com
-
-
-

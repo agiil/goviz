@@ -88,7 +88,7 @@ $_->exec for @SAMPLES;
 my $own = Sample->new(
     {
         image  => "own.png",
-        repo   => "github.com/hirokidaichi/goviz",
+        repo   => "github.com/zackslash/goviz",
         option => "-s SELF"
     }
 );
